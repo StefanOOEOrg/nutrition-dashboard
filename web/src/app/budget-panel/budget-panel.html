@@ -1,0 +1,82 @@
+<section class="card" data-testid="calorie-card">
+  <h2>Calorie budget</h2>
+  <div class="ring">
+    <svg
+      width="150"
+      height="150"
+      viewBox="0 0 124 124"
+      role="img"
+      [attr.aria-label]="kcalText() + ' of ' + calorieGoalText() + ' kcal'"
+    >
+      <circle class="ring-track" cx="62" cy="62" r="54"></circle>
+      <circle
+        class="ring-value"
+        cx="62"
+        cy="62"
+        r="54"
+        [attr.stroke-dasharray]="circumference"
+        [attr.stroke-dashoffset]="ringOffsetValue()"
+      ></circle>
+      <text class="ring-center" x="62" y="58" text-anchor="middle" data-testid="kcal-percent">
+        {{ kcalPercentText() }}
+      </text>
+      <text class="ring-center-sub" x="62" y="74" text-anchor="middle">of budget</text>
+    </svg>
+    <div class="ring-side">
+      <div class="big" data-testid="kcal-total">
+        {{ kcalText() }}<small> / {{ calorieGoalText() }} kcal</small>
+      </div>
+      <div class="left" data-testid="kcal-left">{{ kcalLeftText() }}</div>
+      <div class="left" data-testid="entry-count">
+        {{ entryCount() }} entries · water {{ totals().water_ml }} ml
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="card" data-testid="macro-card">
+  <h2>Macro budget</h2>
+  @for (row of macroRows(); track row.testId) {
+    <div class="row" [attr.data-testid]="row.testId">
+      <div class="row-head">
+        <span class="row-name">{{ row.name }}</span>
+        <span class="row-vals" [class.over-text]="row.over">{{ row.values }}</span>
+      </div>
+      <div class="bar" [class.over]="row.over" [class.nogoal]="row.noGoal">
+        <i [style.width.%]="row.width"></i>
+        @if (!row.noGoal) {
+          <span class="goal"></span>
+        }
+      </div>
+      @if (row.hint) {
+        <div class="hint over-text">{{ row.hint }}</div>
+      }
+    </div>
+  }
+</section>
+
+<section class="card" data-testid="water-card">
+  <h2>Water</h2>
+  <div class="row">
+    <div class="row-head">
+      <span class="row-name" data-testid="water-title">{{ totals().water_ml }} ml</span>
+      <span class="row-vals" data-testid="water-values">{{ waterValues() }}</span>
+    </div>
+    <div class="bar water">
+      <i [style.width.%]="waterWidth()"></i>
+    </div>
+    <div class="hint" data-testid="water-hint">{{ waterHint() }}</div>
+  </div>
+</section>
+
+<section class="card" data-testid="left-card">
+  <h2>Left today</h2>
+  <div class="remain">
+    @for (cell of leftCells(); track cell.testId) {
+      <div [attr.data-testid]="cell.testId">
+        <div class="lab">{{ cell.label }}</div>
+        <div class="val" [class.over-text]="cell.over">{{ cell.value }}</div>
+      </div>
+    }
+  </div>
+</section>

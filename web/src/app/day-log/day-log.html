@@ -1,0 +1,83 @@
+<section class="card ribbon-card" data-testid="ribbon-card">
+  <h2>Day timeline</h2>
+  <div class="ribbon">
+    <div class="track"></div>
+    <div class="tick" style="left: 25%"></div>
+    <div class="tick-label" style="left: 25%">06:00</div>
+    <div class="tick" style="left: 50%"></div>
+    <div class="tick-label" style="left: 50%">12:00</div>
+    <div class="tick" style="left: 75%"></div>
+    <div class="tick-label" style="left: 75%">18:00</div>
+    <div class="tick" style="left: 100%"></div>
+    <div class="tick-label" style="left: 100%">24:00</div>
+    @for (marker of markers(); track marker.testId) {
+      <div
+        class="dot"
+        [class.water]="marker.water"
+        [style.left.%]="marker.left"
+        [attr.title]="marker.title"
+        [attr.data-testid]="marker.testId"
+      ></div>
+    }
+    <div class="now" [style.left.%]="nowLeft()"></div>
+    <div class="now-label" [style.left.%]="nowLeft()" data-testid="now-label">
+      {{ nowLabel() }}
+    </div>
+  </div>
+  <div class="legend">
+    <span><i class="food-dot"></i>food</span>
+    <span><i class="water-dot"></i>water</span>
+  </div>
+</section>
+
+<section class="log" data-testid="log">
+  <div class="log-head">
+    <span>Time</span><span></span><span>Logged</span>
+    <span class="right"><span>kcal</span><span>P</span><span>C</span><span>F</span></span>
+  </div>
+  <ol class="entries">
+    @for (row of rows(); track row.time) {
+      <li
+        class="entry"
+        [class.water]="row.kind === 'water'"
+        [attr.data-testid]="'entry-' + row.time"
+      >
+        <div class="t">{{ row.time }}</div>
+        <div class="axis"><i></i></div>
+        <div class="what">
+          <div class="kind">{{ row.kindLabel }}</div>
+          <div class="foods" [attr.data-testid]="'foods-' + row.time">
+            @for (food of row.foods; track $index) {
+              @if (!$first) {
+                <span class="sep"> · </span>
+              }
+              <span>{{ food }}</span>
+            }
+          </div>
+        </div>
+        <div class="nums">
+          @if (row.kind === 'water') {
+            <div class="ml">
+              {{ row.water }}<span class="sub">ml · {{ row.waterShare }}</span>
+            </div>
+            <div class="m dim">—</div>
+            <div class="m dim">—</div>
+            <div class="m dim">—</div>
+          } @else {
+            <div class="kcal">
+              {{ row.kcal }}<span class="share">{{ row.kcalShare }}</span>
+            </div>
+            <div class="m" [class.over]="row.over.protein">{{ row.protein }}</div>
+            <div class="m" [class.over]="row.over.carbs">{{ row.carbs }}</div>
+            <div class="m" [class.over]="row.over.fat">{{ row.fat }}</div>
+          }
+        </div>
+      </li>
+    }
+    <li class="empty" data-testid="hint">
+      <div class="t">—</div>
+      <div class="axis"></div>
+      <div>{{ hint() }}</div>
+    </li>
+  </ol>
+</section>

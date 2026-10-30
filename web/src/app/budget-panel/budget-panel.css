@@ -1,0 +1,182 @@
+:host {
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  gap: 12px;
+  min-height: 0;
+  align-content: start;
+  overflow: auto;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+/* calorie ring */
+.ring {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ring svg {
+  flex: none;
+}
+
+.ring-track {
+  fill: none;
+  stroke: var(--panel-2);
+  stroke-width: 14;
+}
+
+.ring-value {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 14;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 62px 62px;
+}
+
+.ring-center {
+  fill: var(--text);
+  font:
+    650 26px/1 system-ui,
+    sans-serif;
+}
+
+.ring-center-sub {
+  fill: var(--muted);
+  font:
+    500 11px/1 system-ui,
+    sans-serif;
+}
+
+.ring-side {
+  display: grid;
+  gap: 4px;
+}
+
+.big {
+  font-size: 24px;
+  font-weight: 650;
+}
+
+.big small {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.left {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* macro and water rows */
+.row {
+  margin-top: 12px;
+}
+
+.row:first-of-type {
+  margin-top: 0;
+}
+
+.row-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.row-name {
+  font-weight: 600;
+}
+
+.row-vals {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+
+.bar {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.bar > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.bar.water > i {
+  background: var(--water);
+}
+
+.bar.over > i {
+  background: var(--over);
+}
+
+.bar.nogoal > i {
+  background: repeating-linear-gradient(45deg, #2c3340 0 6px, #232936 6px 12px);
+  width: 100% !important;
+}
+
+.bar .goal {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--line);
+  right: 0;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--muted-2);
+  margin-top: 4px;
+  min-height: 14px;
+}
+
+.over-text {
+  color: var(--over);
+}
+
+/* left today */
+.remain {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.remain > div {
+  background: var(--panel-2);
+  border-radius: 9px;
+  padding: 6px 10px;
+}
+
+.remain > div:last-child {
+  grid-column: span 2;
+}
+
+.lab {
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.val {
+  font-size: 16px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  margin-top: 1px;
+}
