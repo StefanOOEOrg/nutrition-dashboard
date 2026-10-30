@@ -20,23 +20,21 @@ export const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
  * `null` when the goal is `null` or not positive - both mean "there is no budget to divide by".
  */
 export function share(value: number, goal: number | null): number | null {
-  void value;
-  void goal;
-  throw new Error('not implemented');
+  if (goal === null || goal <= 0) {
+    return null;
+  }
+  return (value / goal) * 100;
 }
 
 /** `share()` as display text: `'28 %'`, or `'—'` (em dash) when there is no goal. */
 export function shareText(value: number, goal: number | null): string {
-  void value;
-  void goal;
-  throw new Error('not implemented');
+  const percent = share(value, goal);
+  return percent === null ? '—' : `${Math.round(percent)} %`;
 }
 
 /** `true` when a goal exists and the value is strictly above it (`value > goal`). */
 export function isOver(value: number, goal: number | null): boolean {
-  void value;
-  void goal;
-  throw new Error('not implemented');
+  return goal !== null && value > goal;
 }
 
 /**
@@ -46,8 +44,7 @@ export function isOver(value: number, goal: number | null): boolean {
  * dropped because JavaScript's number-to-string does that by itself.
  */
 export function number1(value: number): string {
-  void value;
-  throw new Error('not implemented');
+  return String(Math.round(value * 10) / 10);
 }
 
 /**
@@ -57,9 +54,11 @@ export function number1(value: number): string {
  * `0` when the goal is `null` or not positive.
  */
 export function barWidth(value: number, goal: number | null): number {
-  void value;
-  void goal;
-  throw new Error('not implemented');
+  const percent = share(value, goal);
+  if (percent === null) {
+    return 0;
+  }
+  return Math.min(100, Math.max(0, percent));
 }
 
 /**
@@ -71,8 +70,11 @@ export function barWidth(value: number, goal: number | null): number {
  * `null` (no goal) -> a full offset, i.e. an empty ring.
  */
 export function ringOffset(sharePercent: number | null): number {
-  void sharePercent;
-  throw new Error('not implemented');
+  if (sharePercent === null) {
+    return RING_CIRCUMFERENCE;
+  }
+  const clamped = Math.min(100, Math.max(0, sharePercent));
+  return RING_CIRCUMFERENCE * (1 - clamped / 100);
 }
 
 /**
@@ -82,8 +84,16 @@ export function ringOffset(sharePercent: number | null): number {
  * Input is `HH:MM`. Anything that is not two valid numbers (`'abc'`, `''`, `'25:99'`) -> `0`.
  */
 export function dayFraction(time: string): number {
-  void time;
-  throw new Error('not implemented');
+  const match = /^(\d{2}):(\d{2})$/.exec(time);
+  if (match === null) {
+    return 0;
+  }
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) {
+    return 0;
+  }
+  return (hours * 60 + minutes) / 1440;
 }
 
 /** Wall-clock label of a `Date` in the browser's zone: `'09:05'`, `'14:09'` (two digits each). */
