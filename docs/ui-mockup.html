@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nutrition Dashboard — UI draft v1</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212a;
+    --line: #262b36;
+    --line-soft: #1f242e;
+    --text: #e7e9ee;
+    --muted: #8b93a7;
+    --muted-2: #616a7d;
+    --accent: #7c5cff;
+    --accent-2: #a78bfa;
+    --ok: #46d39a;
+    --warn: #f5a524;
+    --over: #ff5d5d;
+    --water: #38bdf8;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100vh;
+    overflow: hidden;
+  }
+  .top {
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { font-size: 17px; font-weight: 650; letter-spacing: .2px; }
+  .brand span { color: var(--accent-2); }
+  .date { color: var(--muted); }
+  .tag {
+    margin-left: 8px; padding: 2px 8px; border-radius: 999px;
+    background: rgba(124, 92, 255, .16); color: var(--accent-2);
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px;
+  }
+  .spacer { flex: 1; }
+  .updated { color: var(--muted-2); font-size: 12px; }
+  button {
+    font: inherit; color: var(--text); background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+
+  main {
+    display: grid;
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px 20px 20px;
+    min-height: 0;
+  }
+  aside { display: grid; grid-template-rows: auto auto auto; gap: 12px; min-height: 0; align-content: start; overflow: auto; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .card h2 {
+    margin: 0 0 10px; font-size: 11px; font-weight: 650; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  /* kcal donut */
+  .ring { display: flex; align-items: center; gap: 16px; }
+  .ring svg { flex: none; }
+  .ring-track { fill: none; stroke: var(--panel-2); stroke-width: 14; }
+  .ring-value { fill: none; stroke: var(--accent); stroke-width: 14; stroke-linecap: round;
+                transform: rotate(-90deg); transform-origin: 62px 62px; }
+  .ring-center { fill: var(--text); font: 650 26px/1 system-ui, sans-serif; }
+  .ring-center-sub { fill: var(--muted); font: 500 11px/1 system-ui, sans-serif; }
+  .ring-side { display: grid; gap: 4px; }
+  .big { font-size: 24px; font-weight: 650; }
+  .big small { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .pct { font-size: 13px; color: var(--accent-2); font-weight: 600; }
+  .left { font-size: 12px; color: var(--muted); }
+
+  /* macro + water bars */
+  .row { margin-top: 12px; }
+  .row:first-of-type { margin-top: 0; }
+  .row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .row-name { font-weight: 600; }
+  .row-vals { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+  .row-vals b { color: var(--text); font-weight: 600; }
+  .bar { position: relative; height: 8px; border-radius: 999px; background: var(--panel-2); margin-top: 6px; overflow: hidden; }
+  .bar > i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent); }
+  .bar.water > i { background: var(--water); }
+  .bar.over > i { background: var(--over); }
+  .bar.nogoal > i {
+    background: repeating-linear-gradient(45deg, #2c3340 0 6px, #232936 6px 12px);
+    width: 100% !important;
+  }
+  .bar .goal { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--line); right: 0; }
+  .hint { font-size: 11px; color: var(--muted-2); margin-top: 4px; }
+  .over-text { color: var(--over); }
+
+  /* remaining today */
+  .remain { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .remain > div { background: var(--panel-2); border-radius: 9px; padding: 6px 10px; }
+  .remain > div:last-child { grid-column: span 2; }
+  .remain .lab { font-size: 10px; letter-spacing: .6px; text-transform: uppercase; color: var(--muted-2); }
+  .remain .val { font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 1px; }
+  .remain .val small { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+  /* day column */
+  .day { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 12px; min-height: 0; }
+  .ribbon-card { padding: 12px 16px 6px; }
+  .ribbon { position: relative; height: 54px; margin: 4px 0 0; }
+  .ribbon .track {
+    position: absolute; left: 0; right: 0; top: 18px; height: 6px; border-radius: 999px;
+    background: var(--panel-2);
+  }
+  .ribbon .tick { position: absolute; top: 26px; width: 1px; height: 6px; background: var(--line); }
+  .ribbon .tick-label {
+    position: absolute; top: 34px; transform: translateX(-50%);
+    font-size: 10px; color: var(--muted-2); font-variant-numeric: tabular-nums;
+  }
+  .ribbon .dot {
+    position: absolute; top: 15px; width: 12px; height: 12px; margin-left: -6px;
+    border-radius: 50%; background: var(--accent); border: 2px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .ribbon .dot.water { background: var(--water); box-shadow: 0 0 0 1px var(--water); }
+  .ribbon .now {
+    position: absolute; top: 6px; bottom: 10px; width: 1px;
+    background: linear-gradient(var(--text), rgba(231,233,238,.15));
+  }
+  .ribbon .now-label {
+    position: absolute; top: -2px; transform: translateX(-50%);
+    font-size: 10px; color: var(--text); background: var(--panel);
+    padding: 0 4px; font-variant-numeric: tabular-nums;
+  }
+  .legend { display: flex; gap: 16px; font-size: 11px; color: var(--muted-2); padding: 0 2px 4px; }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 1px; }
+
+  .log { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+         min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+  .log-head {
+    display: grid; grid-template-columns: 64px 22px minmax(0, 1fr) 250px;
+    gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line);
+    font-size: 10px; letter-spacing: .8px; text-transform: uppercase; color: var(--muted);
+  }
+  .log-head .right { display: grid; grid-template-columns: 78px repeat(3, 1fr); gap: 6px; text-align: right; }
+  .entries { list-style: none; margin: 0; padding: 4px 0 8px; overflow: auto; }
+  .entry {
+    display: grid; grid-template-columns: 64px 22px minmax(0, 1fr) 250px;
+    gap: 12px; align-items: start; padding: 8px 16px;
+  }
+  .entry + .entry { border-top: 1px solid var(--line-soft); }
+  .t { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; padding-top: 2px; text-align: right; }
+  .axis { position: relative; align-self: stretch; }
+  .axis::before { content: ""; position: absolute; left: 50%; top: -8px; bottom: -8px; width: 1px; background: var(--line); }
+  .axis i {
+    position: absolute; left: 50%; top: 4px; width: 10px; height: 10px; margin-left: -5px;
+    border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--panel);
+  }
+  .entry.water .axis i { background: var(--water); }
+  .what { min-width: 0; }
+  .what .kind {
+    font-size: 10px; letter-spacing: .7px; text-transform: uppercase; color: var(--muted-2);
+    margin-bottom: 2px;
+  }
+  .what .foods { font-weight: 600; }
+  .what .foods span + span::before { content: " · "; color: var(--muted-2); }
+  .nums { display: grid; grid-template-columns: 78px repeat(3, 1fr); gap: 6px; text-align: right; align-items: start; }
+  .nums .kcal { font-variant-numeric: tabular-nums; font-weight: 650; }
+  .nums .share { display: block; font-size: 11px; color: var(--accent-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .nums .m { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
+  .nums .m.dim { color: var(--muted-2); }
+  .nums .m.over { color: var(--over); font-weight: 600; }
+  .nums .ml { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--water); }
+  .nums .sub { display: block; font-size: 11px; color: var(--muted-2); font-weight: 500; }
+  .empty {
+    display: grid; grid-template-columns: 64px 22px minmax(0, 1fr); gap: 12px;
+    padding: 10px 16px 14px; color: var(--muted-2); font-size: 12px;
+  }
+  .empty .axis { min-height: 28px; }
+  .empty .axis::before { background: linear-gradient(var(--line), transparent); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">Nutri<span>tion</span></div>
+  <div class="date">Friday, 30 October 2026 <span class="tag">Today</span></div>
+  <div class="spacer"></div>
+  <div class="updated">updated 14:09</div>
+  <button type="button">Refresh</button>
+</header>
+
+<main>
+  <aside>
+    <!-- kcal budget -->
+    <section class="card">
+      <h2>Calorie budget</h2>
+      <div class="ring">
+        <svg width="150" height="150" viewBox="0 0 124 124" aria-label="1624 of 2000 kcal">
+          <circle class="ring-track" cx="62" cy="62" r="54"></circle>
+          <circle class="ring-value" cx="62" cy="62" r="54"
+                  stroke-dasharray="339.29" stroke-dashoffset="63.72"></circle>
+          <text class="ring-center" x="62" y="58" text-anchor="middle">81%</text>
+          <text class="ring-center-sub" x="62" y="74" text-anchor="middle">of budget</text>
+        </svg>
+        <div class="ring-side">
+          <div class="big">1624<small> / 2000 kcal</small></div>
+          <div class="left">376 kcal left today</div>
+          <div class="left">5 entries · water 2000 ml</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- macros -->
+    <section class="card">
+      <h2>Macro budget</h2>
+
+      <div class="row">
+        <div class="row-head">
+          <span class="row-name">Protein</span>
+          <span class="row-vals"><b>134.8</b> / 130 g · <b class="over-text">104 %</b></span>
+        </div>
+        <div class="bar over"><i style="width: 100%"></i></div>
+        <div class="hint over-text">5 g over the daily goal</div>
+      </div>
+
+      <div class="row">
+        <div class="row-head">
+          <span class="row-name">Carbs</span>
+          <span class="row-vals"><b>107.1</b> / 210 g · <b>51 %</b></span>
+        </div>
+        <div class="bar"><i style="width: 51%"></i><span class="goal"></span></div>
+      </div>
+
+      <div class="row">
+        <div class="row-head">
+          <span class="row-name">Fat</span>
+          <span class="row-vals"><b>71.2</b> / 70 g · <b class="over-text">102 %</b></span>
+        </div>
+        <div class="bar over"><i style="width: 100%"></i></div>
+        <div class="hint over-text">1 g over the daily goal</div>
+      </div>
+    </section>
+
+    <!-- water -->
+    <section class="card">
+      <h2>Water</h2>
+      <div class="row">
+        <div class="row-head">
+          <span class="row-name">2000 ml</span>
+          <span class="row-vals">of 3000 ml · <b>67 %</b></span>
+        </div>
+        <div class="bar water"><i style="width: 66.7%"></i></div>
+        <div class="hint">1000 ml left</div>
+      </div>
+    </section>
+
+    <!-- remaining -->
+    <section class="card">
+      <h2>Left today</h2>
+      <div class="remain">
+        <div><div class="lab">Calories</div><div class="val">376 <small>kcal</small></div></div>
+        <div><div class="lab">Protein</div><div class="val over-text">−4.8 <small>g</small></div></div>
+        <div><div class="lab">Carbs</div><div class="val">102.9 <small>g</small></div></div>
+        <div><div class="lab">Fat</div><div class="val over-text">−1.2 <small>g</small></div></div>
+        <div><div class="lab">Water</div><div class="val">1000 <small>ml</small></div></div>
+      </div>
+    </section>
+  </aside>
+
+  <section class="day">
+    <!-- timeline ribbon -->
+    <section class="card ribbon-card">
+      <h2>Day timeline</h2>
+      <div class="ribbon">
+        <div class="track"></div>
+        <div class="tick" style="left: 25%"></div><div class="tick-label" style="left: 25%">06:00</div>
+        <div class="tick" style="left: 50%"></div><div class="tick-label" style="left: 50%">12:00</div>
+        <div class="tick" style="left: 75%"></div><div class="tick-label" style="left: 75%">18:00</div>
+        <div class="tick" style="left: 100%"></div><div class="tick-label" style="left: 100%">24:00</div>
+        <div class="dot" style="left: 31.25%" title="07:30 breakfast"></div>
+        <div class="dot water" style="left: 44.72%" title="10:44 water"></div>
+        <div class="dot" style="left: 47.99%" title="11:31 snack"></div>
+        <div class="dot" style="left: 50%" title="12:00 lunch"></div>
+        <div class="dot" style="left: 57.92%" title="13:54 snack"></div>
+        <div class="now" style="left: 58.96%"></div>
+        <div class="now-label" style="left: 58.96%">14:09</div>
+      </div>
+      <div class="legend"><span><i style="background: var(--accent)"></i>food</span>
+        <span><i style="background: var(--water)"></i>water</span></div>
+    </section>
+
+    <!-- timeline log -->
+    <section class="log">
+      <div class="log-head">
+        <span>Time</span><span></span><span>Logged</span>
+        <span class="right"><span>kcal</span><span>P</span><span>C</span><span>F</span></span>
+      </div>
+      <ol class="entries">
+        <li class="entry">
+          <div class="t">07:30</div><div class="axis"><i></i></div>
+          <div class="what">
+            <div class="kind">Breakfast</div>
+            <div class="foods"><span>Kaffee mit Milch 1 Tasse</span><span>Overnight Oats Bowl 1 Portion</span></div>
+          </div>
+          <div class="nums">
+            <div class="kcal">554<span class="share">28 %</span></div>
+            <div class="m">38 %</div><div class="m">28 %</div><div class="m">18 %</div>
+          </div>
+        </li>
+
+        <li class="entry water">
+          <div class="t">10:44</div><div class="axis"><i></i></div>
+          <div class="what">
+            <div class="kind">Water</div>
+            <div class="foods"><span>2000 ml</span></div>
+          </div>
+          <div class="nums">
+            <div class="ml">2000<span class="sub">ml · 67 %</span></div>
+            <div class="m dim">—</div><div class="m dim">—</div><div class="m dim">—</div>
+          </div>
+        </li>
+
+        <li class="entry">
+          <div class="t">11:31</div><div class="axis"><i></i></div>
+          <div class="what">
+            <div class="kind">Snack</div>
+            <div class="foods"><span>High Protein Milchreis 1 Portion (½ Dose, 200 g)</span></div>
+          </div>
+          <div class="nums">
+            <div class="kcal">170<span class="share">9 %</span></div>
+            <div class="m">12 %</div><div class="m">10 %</div><div class="m">4 %</div>
+          </div>
+        </li>
+
+        <li class="entry">
+          <div class="t">12:00</div><div class="axis"><i></i></div>
+          <div class="what">
+            <div class="kind">Lunch</div>
+            <div class="foods"><span>2 Eier</span><span>Faschiertes &amp; Zwiebeln</span></div>
+          </div>
+          <div class="nums">
+            <div class="kcal">730<span class="share">37 %</span></div>
+            <div class="m">43 %</div><div class="m">3 %</div><div class="m over">75 %</div>
+          </div>
+        </li>
+
+        <li class="entry">
+          <div class="t">13:54</div><div class="axis"><i></i></div>
+          <div class="what">
+            <div class="kind">Snack</div>
+            <div class="foods"><span>High Protein Milchreis (Dr. Oetker) 1 Portion (200 g)</span></div>
+          </div>
+          <div class="nums">
+            <div class="kcal">170<span class="share">9 %</span></div>
+            <div class="m">12 %</div><div class="m">10 %</div><div class="m">4 %</div>
+          </div>
+        </li>
+
+        <li class="empty">
+          <div class="t">—</div><div class="axis"></div>
+          <div>Nothing logged since 13:54.</div>
+        </li>
+      </ol>
+    </section>
+  </section>
+</main>
+
+</body>
+</html>

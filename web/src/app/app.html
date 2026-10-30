@@ -1,0 +1,40 @@
+<header class="topbar">
+  <div class="logo">Nutri<span>tion</span></div>
+  <div class="date" data-testid="date">{{ dateText() }}</div>
+  <span class="tag">Today</span>
+  <div class="spacer"></div>
+  <div class="updated" data-testid="updated">updated {{ nowLabel() }}</div>
+  <button type="button" data-testid="refresh" (click)="load()">Refresh</button>
+</header>
+
+@if (error(); as message) {
+  <div class="error" data-testid="error">
+    <span>{{ message }}</span>
+    <button type="button" title="Dismiss" (click)="dismissError()">×</button>
+  </div>
+}
+
+@if (day(); as data) {
+  <main class="grid">
+    <app-budget-panel
+      [goals]="data.goals"
+      [totals]="data.totals"
+      [entryCount]="entryCount()"
+    ></app-budget-panel>
+    <app-day-log
+      [entries]="data.entries"
+      [goals]="data.goals"
+      [nowLabel]="nowLabel()"
+    ></app-day-log>
+  </main>
+} @else {
+  <main class="grid placeholder" data-testid="placeholder">
+    <p>
+      @if (loading()) {
+        Loading today's diary…
+      } @else {
+        Nothing loaded yet.
+      }
+    </p>
+  </main>
+}
