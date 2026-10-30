@@ -8,9 +8,17 @@ The data comes from the [mcp-nutrition](https://github.com/StefanOOEOrg/mcp-nutr
 [mcp-food](https://github.com/StefanOOEOrg/mcp-food). The dashboard only reads - logging stays in
 the chat via the MCP tools.
 
-- `server/` - Python (FastAPI): `GET /api/today` plus the built Angular app under `/`
-- `web/` - Angular app (single page, dark theme)
-- `docs/ui-mockup.html` - the approved visual specification (static, real data from 30 Oct 2026)
+![Nutrition dashboard: calorie ring at 81 % of the budget, macro bars for protein, carbs and fat,
+water, the day timeline and the log on a vertical time axis](docs/screenshot.png)
+
+## Data sources
+
+Both servers share one Postgres database; the dashboard only reads from it.
+
+| Repository | What it contributes |
+|---|---|
+| [mcp-nutrition](https://github.com/StefanOOEOrg/mcp-nutrition) | the diary: meals, water and the daily goals (schema `nutrition`) - it also ships the container `nutrition-db` on `127.0.0.1:5433` |
+| [mcp-food](https://github.com/StefanOOEOrg/mcp-food) | the nutrition values of foods and recipes (schema `food`) that end up in a logged meal |
 
 ## What it shows
 
@@ -109,6 +117,8 @@ web/src/app/
   day-log/      day ribbon and the log on the time axis
   format.ts     pure formatting helpers (percentages, bar widths, labels)
   api.service.ts  GET /api/today
+docs/ui-mockup.html   approved visual specification (static, real data)
+docs/screenshot.png   the dashboard as a PNG, for this README
 ```
 
 ## Scope and limitations
