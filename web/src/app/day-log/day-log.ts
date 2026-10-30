@@ -1,6 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 
-import { dayFraction, isOver, number1, shareText } from '../format';
+import { dayFraction, isOver, shareText } from '../format';
 import { Entry, Goals } from '../models';
 
 /** One dot on the day ribbon. */
@@ -63,15 +63,17 @@ export class DayLog {
    * One marker per entry: `testId = 'marker-<index>'`, `left = dayFraction(entry.time) * 100`,
    * `water = entry.kind === 'water'`, `title = '<time> <kind>'`.
    */
-  readonly markers = computed<Marker[]>(() => {
-    void dayFraction;
-    throw new Error('not implemented');
-  });
+  readonly markers = computed<Marker[]>(() =>
+    this.entries().map((entry, index) => ({
+      testId: `marker-${index}`,
+      left: dayFraction(entry.time) * 100,
+      water: entry.kind === 'water',
+      title: `${entry.time} ${entry.kind}`,
+    })),
+  );
 
   /** Position of the "now" line in percent: `dayFraction(nowLabel()) * 100`. */
-  readonly nowLeft = computed<number>(() => {
-    throw new Error('not implemented');
-  });
+  readonly nowLeft = computed<number>(() => dayFraction(this.nowLabel()) * 100);
 
   /**
    * One row per entry, in the order of `entries()`:
@@ -87,10 +89,44 @@ export class DayLog {
    *   `over` all `false`.
    */
   readonly rows = computed<LogRow[]>(() => {
-    void isOver;
-    void number1;
-    void shareText;
-    throw new Error('not implemented');
+    const goals = this.goals();
+    return this.entries().map((entry) => {
+      const kindLabel =
+        entry.meal_types.length === 0
+          ? 'Water'
+          : entry.meal_types
+              .map((type) => type.charAt(0).toUpperCase() + type.slice(1))
+              .join(' · ');
+      const base = { time: entry.time, kind: entry.kind, kindLabel, foods: entry.foods };
+      if (entry.kind === 'water') {
+        return {
+          ...base,
+          kcal: '',
+          kcalShare: '',
+          protein: '—',
+          carbs: '—',
+          fat: '—',
+          water: String(entry.water_ml),
+          waterShare: shareText(entry.water_ml, goals.water_ml),
+          over: { protein: false, carbs: false, fat: false },
+        };
+      }
+      return {
+        ...base,
+        kcal: String(Math.round(entry.kcal)),
+        kcalShare: shareText(entry.kcal, goals.kcal),
+        protein: shareText(entry.protein_g, goals.protein_g),
+        carbs: shareText(entry.carbs_g, goals.carbs_g),
+        fat: shareText(entry.fat_g, goals.fat_g),
+        water: '',
+        waterShare: '',
+        over: {
+          protein: isOver(entry.protein_g, goals.protein_g),
+          carbs: isOver(entry.carbs_g, goals.carbs_g),
+          fat: isOver(entry.fat_g, goals.fat_g),
+        },
+      };
+    });
   });
 
   /**
@@ -99,6 +135,10 @@ export class DayLog {
    * - otherwise -> `'Nothing logged since <time of the last entry>.'`
    */
   readonly hint = computed<string>(() => {
-    throw new Error('not implemented');
+    const entries = this.entries();
+    if (entries.length === 0) {
+      return 'Nothing logged yet.';
+    }
+    return `Nothing logged since ${entries[entries.length - 1].time}.`;
   });
 }
