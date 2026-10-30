@@ -52,7 +52,21 @@ def _foods(meal_row: MealRow) -> list[str]:
     components = meal_row.components or ""
     if not components.strip():
         return [meal_row.name]
-    return [part.strip() for part in components.split(",") if part.strip()]
+    parts: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for char in components:
+        if char == "(":
+            depth += 1
+        elif char == ")" and depth > 0:
+            depth -= 1
+        if char == "," and depth == 0:
+            parts.append("".join(current))
+            current = []
+            continue
+        current.append(char)
+    parts.append("".join(current))
+    return [stripped for part in parts if (stripped := part.strip())]
 
 
 def _entry(minute: str, meals: list[MealRow], water_rows: list[WaterRow]) -> dict[str, Any]:
