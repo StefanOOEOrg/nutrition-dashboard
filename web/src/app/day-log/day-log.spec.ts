@@ -135,7 +135,7 @@ describe('DayLog', () => {
     expect(row.waterShare).toBe('');
   });
 
-  it('marks an exceeded macro in the row of the day', () => {
+  it('reports the shares of a row that stays inside its goals', () => {
     const shell = setup();
     fixture = shell.fixture;
 
@@ -144,9 +144,30 @@ describe('DayLog', () => {
     expect(row.kcalShare).toBe('37 %');
     expect(row.protein).toBe('43 %');
     expect(row.fat).toBe('75 %');
+    expect(row.over.fat).toBe(false);
+    expect(row.over.protein).toBe(false);
+  });
+
+  it('marks an exceeded macro in its row', () => {
+    const heavy: Entry = {
+      time: '18:00',
+      kind: 'meal',
+      meal_types: ['dinner'],
+      foods: ['Raclette 300 g'],
+      kcal: 950,
+      protein_g: 40,
+      carbs_g: 10,
+      fat_g: 78,
+      water_ml: 0,
+    };
+    const shell = setup([heavy]);
+    fixture = shell.fixture;
+
+    const row = shell.component.rows()[0];
+    expect(row.fat).toBe('111 %');
     expect(row.over.fat).toBe(true);
     expect(row.over.protein).toBe(false);
-    const fatCell = one(shell.el, 'entry-12:00').querySelectorAll('.nums .m')[2] as HTMLElement;
+    const fatCell = one(shell.el, 'entry-18:00').querySelectorAll('.nums .m')[2] as HTMLElement;
     expect(fatCell.classList).toContain('over');
   });
 
@@ -210,7 +231,7 @@ describe('DayLog', () => {
     const shell = setup();
     fixture = shell.fixture;
 
-    expect(text(shell.el, 'hint')).toBe('Nothing logged since 12:00.');
+    expect(text(shell.el, 'hint-text')).toBe('Nothing logged since 12:00.');
   });
 
   it('hints at an empty day', () => {
@@ -220,6 +241,6 @@ describe('DayLog', () => {
     expect(shell.component.markers()).toEqual([]);
     expect(shell.component.rows()).toEqual([]);
     expect(shell.component.hint()).toBe('Nothing logged yet.');
-    expect(text(shell.el, 'hint')).toBe('Nothing logged yet.');
+    expect(text(shell.el, 'hint-text')).toBe('Nothing logged yet.');
   });
 });
