@@ -5,10 +5,13 @@ argument. The database layer (``db.py``) collects the rows, this module turns th
 JSON shape the browser consumes.
 """
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
 
-from .models import RawDay
+from .models import GoalsRow, MealRow, RawDay, WaterRow
+
+NUTRIENTS = ("kcal", "protein_g", "carbs_g", "fat_g")
 
 
 def day_bounds(day: date, tz: str) -> tuple[datetime, datetime]:
@@ -32,7 +35,51 @@ def day_bounds(day: date, tz: str) -> tuple[datetime, datetime]:
     - ``day_bounds(date(2026, 3, 29), "Europe/Vienna")`` -> ``2026-03-28 23:00Z`` to
       ``2026-03-29 22:00Z`` (23 h)
     """
-    raise NotImplementedError
+    zone = ZoneInfo(tz)
+    next_day = day + timedelta(days=1)
+    start = datetime(day.year, day.month, day.day, tzinfo=zone)
+    end = datetime(next_day.year, next_day.month, next_day.day, tzinfo=zone)
+    return start.astimezone(UTC), end.astimezone(UTC)
+
+
+def _minute_key(moment: datetime, zone: ZoneInfo) -> str:
+    """Local wall-clock minute of ``moment`` (``"HH:MM"``)."""
+    return moment.astimezone(zone).strftime("%H:%M")
+
+
+def _foods(meal_row: MealRow) -> list[str]:
+    """The comma-separated components of a meal, or its name when there are none."""
+    components = meal_row.components or ""
+    if not components.strip():
+        return [meal_row.name]
+    return [part.strip() for part in components.split(",") if part.strip()]
+
+
+def _entry(minute: str, meals: list[MealRow], water_rows: list[WaterRow]) -> dict[str, Any]:
+    """One entry of the response for the given local minute."""
+    meals = sorted(meals, key=lambda row: row.eaten_at)
+    foods = [food for meal_row in meals for food in _foods(meal_row)]
+    foods += [f"{water_row.ml} ml" for water_row in water_rows]
+    return {
+        "time": minute,
+        "kind": "meal" if meals else "water",
+        "meal_types": list(dict.fromkeys(row.meal_type for row in meals)),
+        "foods": foods,
+        **{key: round(float(sum(getattr(row, key) for row in meals)), 1) for key in NUTRIENTS},
+        "water_ml": sum(water_row.ml for water_row in water_rows),
+    }
+
+
+def _goals(goals: GoalsRow | None) -> dict[str, Any]:
+    """The goals block; a missing row or a column the user never set is ``None``."""
+    if goals is None:
+        return dict.fromkeys((*NUTRIENTS, "water_ml"))
+    converted: dict[str, Any] = {
+        key: None if (value := getattr(goals, key)) is None else round(float(value), 1)
+        for key in NUTRIENTS
+    }
+    converted["water_ml"] = goals.water_ml
+    return converted
 
 
 def build_day(day: date, raw: RawDay, tz: str) -> dict[str, Any]:
@@ -82,4 +129,25 @@ def build_day(day: date, raw: RawDay, tz: str) -> dict[str, Any]:
     - An empty day (no meals, no water) returns an empty ``entries`` list, totals of ``0`` and
       the goals as they are - not an error.
     """
-    raise NotImplementedError
+    zone = ZoneInfo(tz)
+    meals_by_minute: dict[str, list[MealRow]] = {}
+    water_by_minute: dict[str, list[WaterRow]] = {}
+    for meal_row in raw.meals:
+        meals_by_minute.setdefault(_minute_key(meal_row.eaten_at, zone), []).append(meal_row)
+    for water_row in raw.water:
+        water_by_minute.setdefault(_minute_key(water_row.drunk_at, zone), []).append(water_row)
+
+    entries = [
+        _entry(minute, meals_by_minute.get(minute, []), water_by_minute.get(minute, []))
+        for minute in sorted(meals_by_minute.keys() | water_by_minute.keys())
+    ]
+    return {
+        "date": day.isoformat(),
+        "timezone": tz,
+        "goals": _goals(raw.goals),
+        "totals": {
+            **{key: round(sum(entry[key] for entry in entries), 1) for key in NUTRIENTS},
+            "water_ml": sum(entry["water_ml"] for entry in entries),
+        },
+        "entries": entries,
+    }
