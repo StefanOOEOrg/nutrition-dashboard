@@ -7,7 +7,7 @@ coverage/
 *.tsbuildinfo
 
 # Node modules
-node_modules/
+node_modules
 yarn.lock
 
 # Environment files (per machine; only the template is committed)
