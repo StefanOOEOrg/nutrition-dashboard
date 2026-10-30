@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Nutrition Dashboard">
+  <title>Nutrition Dashboard</title>
+  <desc>A violet budget ring with a bite taken out of it, on a dark tile.</desc>
+  <defs>
+    <mask id="bite">
+      <rect width="512" height="512" fill="black"/>
+      <circle cx="256" cy="256" r="150" fill="none" stroke="white" stroke-width="56"
+              stroke-linecap="round" stroke-dasharray="700 943" transform="rotate(-90 256 256)"/>
+      <circle cx="391" cy="203" r="32" fill="black"/>
+      <circle cx="406" cy="266" r="24" fill="black"/>
+    </mask>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#14161c"/>
+  <rect width="512" height="512" rx="112" fill="#7c5cff" mask="url(#bite)"/>
+  <circle cx="256" cy="106" r="15" fill="#a78bfa"/>
+</svg>

@@ -38,7 +38,8 @@
     padding: 12px 20px;
     border-bottom: 1px solid var(--line);
   }
-  .brand { font-size: 17px; font-weight: 650; letter-spacing: .2px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 650; letter-spacing: .2px; }
+  .brand .mark { width: 30px; height: 30px; display: block; flex: none; }
   .brand span { color: var(--accent-2); }
   .date { color: var(--muted); }
   .tag {
@@ -189,9 +190,10 @@
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><mask id="mockupBite"><rect width="512" height="512" fill="black"/><circle cx="256" cy="256" r="150" fill="none" stroke="white" stroke-width="56" stroke-linecap="round" stroke-dasharray="700 943" transform="rotate(-90 256 256)"/><circle cx="391" cy="203" r="32" fill="black"/><circle cx="406" cy="266" r="24" fill="black"/></mask></defs></svg>
 
 <header class="top">
-  <div class="brand">Nutri<span>tion</span></div>
+  <div class="brand"><svg class="mark" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#14161c"/><rect width="512" height="512" rx="112" fill="#7c5cff" mask="url(#mockupBite)"/><circle cx="256" cy="106" r="15" fill="#a78bfa"/></svg>Nutri<span>tion</span></div>
   <div class="date">Friday, 30 October 2026 <span class="tag">Today</span></div>
   <div class="spacer"></div>
   <div class="updated">updated 14:09</div>
