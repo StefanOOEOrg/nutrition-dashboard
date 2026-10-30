@@ -20,6 +20,13 @@
   letter-spacing: 0.2px;
 }
 
+.mark {
+  width: 30px;
+  height: 30px;
+  display: block;
+  flex: none;
+}
+
 .logo span {
   color: var(--accent-2);
 }
