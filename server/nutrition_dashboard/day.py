@@ -115,10 +115,14 @@ def build_day(day: date, raw: RawDay, tz: str) -> dict[str, Any]:
     - ``meal_types`` lists the distinct ``meal_type`` values of the minute's meal rows, in the
       order the rows appear once they are sorted by ``eaten_at`` (ties keep the given order).
     - ``foods`` collects, per meal row in that same order: if ``components`` is a string with
-      something besides whitespace, every comma-separated part, stripped, empty parts dropped
+      something besides whitespace, split it at commas into parts, stripped, empty parts dropped
       (``"Kaffee mit Milch 1 Tasse, Overnight Oats Bowl 1 Portion"`` -> two entries); otherwise
-      the row's ``name``. After all meal rows follow one ``"<ml> ml"`` string per water row of
-      the minute (``"2000 ml"``).
+      the row's ``name``. **A comma inside parentheses separates nothing:**
+      ``"High Protein Milchreis 1 Portion (½ Dose, 200 g)"`` stays ONE food, because the
+      parenthesis carries the portion note and real rows are written that way. Walk the string,
+      track the parenthesis depth and split at depth 0 only (``'('`` increases, ``')'`` decreases,
+      never below 0). After all meal rows follow one ``"<ml> ml"`` string per water row of the
+      minute (``"2000 ml"``).
     - The nutrient keys of an entry are the sums over its meal rows, converted to ``float`` and
       rounded to one decimal (``round(float(value), 1)``); ``water_ml`` is the ``int`` sum over
       its water rows. A key without a matching row is ``0`` / ``0.0``, never ``None``.

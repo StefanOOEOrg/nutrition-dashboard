@@ -326,3 +326,30 @@ def test_an_empty_day_returns_empty_entries_and_zero_totals() -> None:
         "water_ml": 0,
     }
     assert result["goals"]["kcal"] == 2000.0
+
+
+def test_a_comma_inside_parentheses_does_not_split_a_food() -> None:
+    result = build_day(
+        date(2026, 10, 30),
+        raw(
+            meals=(
+                meal(
+                    "2026-10-30T10:31:00+00:00",
+                    meal_type="snack",
+                    name="High Protein Milchreis",
+                    components="High Protein Milchreis 1 Portion (½ Dose, 200 g)",
+                ),
+                meal(
+                    "2026-10-30T10:31:30+00:00",
+                    meal_type="drink",
+                    name="NOM Shake",
+                    components="NOM Interval High Carb Proteinshake 1 Portion (30 g, 2 Messlöffel)",
+                ),
+            )
+        ),
+        TZ,
+    )
+    assert result["entries"][0]["foods"] == [
+        "High Protein Milchreis 1 Portion (½ Dose, 200 g)",
+        "NOM Interval High Carb Proteinshake 1 Portion (30 g, 2 Messlöffel)",
+    ]
