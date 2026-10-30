@@ -51,7 +51,10 @@ def test_load_day_uses_the_local_day_not_the_utc_day(day: Day, schema: str) -> N
     day.meal(datetime(2026, 10, 29, 23, 30, tzinfo=UTC), name="Late night")
     # 30 October 23:30Z is 31 October 00:30 in Vienna -> outside the day.
     day.meal(datetime(2026, 10, 30, 23, 30, tzinfo=UTC), name="Next day")
-    day.water(datetime(2026, 10, 30, 23, 0, tzinfo=UTC), 250)
+    # 22:30Z is 23:30 local -> inside. 23:00Z is exactly midnight at the end of the day and the
+    # interval is half-open, so that row must stay out (see day_bounds).
+    day.water(datetime(2026, 10, 30, 22, 30, tzinfo=UTC), 250)
+    day.water(datetime(2026, 10, 30, 23, 0, tzinfo=UTC), 500)
 
     raw = load_day(date(2026, 10, 30), url=day.url, tz=TZ, schema=schema)
 
