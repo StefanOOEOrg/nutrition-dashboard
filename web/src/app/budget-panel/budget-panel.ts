@@ -66,40 +66,32 @@ export class BudgetPanel {
    * `share(totals().kcal, goals().kcal)` - the percentage of the calorie budget, `null` without a
    * goal.
    */
-  readonly kcalShare = computed<number | null>(() => {
-    void share;
-    void this.totals;
-    void this.goals;
-    throw new Error('not implemented');
-  });
+  readonly kcalShare = computed<number | null>(() => share(this.totals().kcal, this.goals().kcal));
 
   /**
    * `ringOffset(kcalShare())` - the `stroke-dashoffset` of the ring (see `format.ts`).
    */
-  readonly ringOffsetValue = computed<number>(() => {
-    void ringOffset;
-    throw new Error('not implemented');
-  });
+  readonly ringOffsetValue = computed<number>(() => ringOffset(this.kcalShare()));
 
   /**
    * Percentage in the middle of the ring: `'81%'` - the rounded share without a space, `'—'`
    * when there is no calorie goal.
    */
   readonly kcalPercentText = computed<string>(() => {
-    throw new Error('not implemented');
+    const percent = this.kcalShare();
+    return percent === null ? '—' : `${Math.round(percent)}%`;
   });
 
   /**
    * Consumed calories as text, rounded to whole kcal: `String(Math.round(totals().kcal))`,
    * e.g. `'1624'` (nobody needs a decimal of a calorie).
    */
-  readonly kcalText = computed<string>(() => {
-    throw new Error('not implemented');
-  });
+  readonly kcalText = computed<string>(() => String(Math.round(this.totals().kcal)));
 
   /** The calorie goal as text: `number1(goals().kcal)`, or `'—'` when it is `null`. */
   readonly calorieGoalText = computed<string>(() => {
-    throw new Error('not implemented');
+    const goal = this.goals().kcal;
+    return goal === null ? '—' : number1(goal);
   });
 
   /**
@@ -109,7 +101,14 @@ export class BudgetPanel {
    * - remaining < 0 -> `'<n> kcal over the goal'` with `n = Math.round(-remaining)`
    */
   readonly kcalLeftText = computed<string>(() => {
-    throw new Error('not implemented');
+    const goal = this.goals().kcal;
+    if (goal === null) {
+      return 'no calorie goal';
+    }
+    const remaining = goal - this.totals().kcal;
+    return remaining >= 0
+      ? `${Math.round(remaining)} kcal left today`
+      : `${Math.round(-remaining)} kcal over the goal`;
   });
 
   /**
@@ -122,11 +121,32 @@ export class BudgetPanel {
    * - `hint` only when over: `'<n> g over the daily goal'` with `n = Math.round(value - goal)`
    */
   readonly macroRows = computed<MacroRow[]>(() => {
-    void barWidth;
-    void isOver;
-    void number1;
-    void shareText;
-    throw new Error('not implemented');
+    const totals = this.totals();
+    const goals = this.goals();
+    const macros = [
+      { testId: 'macro-protein', name: 'Protein', value: totals.protein_g, goal: goals.protein_g },
+      { testId: 'macro-carbs', name: 'Carbs', value: totals.carbs_g, goal: goals.carbs_g },
+      { testId: 'macro-fat', name: 'Fat', value: totals.fat_g, goal: goals.fat_g },
+    ];
+    return macros.map((macro) => {
+      const over = isOver(macro.value, macro.goal);
+      return {
+        testId: macro.testId,
+        name: macro.name,
+        values:
+          macro.goal === null
+            ? `${number1(macro.value)} g · no goal`
+            : `${number1(macro.value)} / ${number1(macro.goal)} g · ` +
+              shareText(macro.value, macro.goal),
+        hint:
+          over && macro.goal !== null
+            ? `${Math.round(macro.value - macro.goal)} g over the daily goal`
+            : null,
+        width: barWidth(macro.value, macro.goal),
+        over,
+        noGoal: macro.goal === null,
+      };
+    });
   });
 
   /**
@@ -135,13 +155,17 @@ export class BudgetPanel {
    * - goal `null`: `'<ml> ml · no goal'`
    */
   readonly waterValues = computed<string>(() => {
-    throw new Error('not implemented');
+    const water = this.totals().water_ml;
+    const goal = this.goals().water_ml;
+    return goal === null
+      ? `${number1(water)} ml · no goal`
+      : `${number1(water)} / ${number1(goal)} ml · ${shareText(water, goal)}`;
   });
 
   /** Bar width of the water row: `barWidth(totals().water_ml, goals().water_ml)`. */
-  readonly waterWidth = computed<number>(() => {
-    throw new Error('not implemented');
-  });
+  readonly waterWidth = computed<number>(() =>
+    barWidth(this.totals().water_ml, this.goals().water_ml),
+  );
 
   /**
    * Hint under the water bar:
@@ -150,7 +174,14 @@ export class BudgetPanel {
    * - remaining < 0 -> `'<n> ml over the goal'` with `n` as a positive number
    */
   readonly waterHint = computed<string>(() => {
-    throw new Error('not implemented');
+    const goal = this.goals().water_ml;
+    if (goal === null) {
+      return '';
+    }
+    const remaining = goal - this.totals().water_ml;
+    return remaining >= 0
+      ? `${number1(remaining)} ml left`
+      : `${number1(-remaining)} ml over the goal`;
   });
 
   /**
@@ -167,6 +198,63 @@ export class BudgetPanel {
    *   `over = true` (e.g. `'−5 g'`); calories are rounded like above
    */
   readonly leftCells = computed<LeftCell[]>(() => {
-    throw new Error('not implemented');
+    const totals = this.totals();
+    const goals = this.goals();
+    const cells = [
+      {
+        testId: 'left-kcal',
+        label: 'Calories',
+        consumed: totals.kcal,
+        goal: goals.kcal,
+        unit: 'kcal',
+        format: (amount: number): string => String(Math.round(amount)),
+      },
+      {
+        testId: 'left-protein',
+        label: 'Protein',
+        consumed: totals.protein_g,
+        goal: goals.protein_g,
+        unit: 'g',
+        format: number1,
+      },
+      {
+        testId: 'left-carbs',
+        label: 'Carbs',
+        consumed: totals.carbs_g,
+        goal: goals.carbs_g,
+        unit: 'g',
+        format: number1,
+      },
+      {
+        testId: 'left-fat',
+        label: 'Fat',
+        consumed: totals.fat_g,
+        goal: goals.fat_g,
+        unit: 'g',
+        format: number1,
+      },
+      {
+        testId: 'left-water',
+        label: 'Water',
+        consumed: totals.water_ml,
+        goal: goals.water_ml,
+        unit: 'ml',
+        format: number1,
+      },
+    ];
+    return cells.map((cell) => {
+      if (cell.goal === null) {
+        return { testId: cell.testId, label: cell.label, value: '—', over: false };
+      }
+      const remaining = cell.goal - cell.consumed;
+      const over = remaining < 0;
+      const amount = cell.format(over ? -remaining : remaining);
+      return {
+        testId: cell.testId,
+        label: cell.label,
+        value: over ? `\u2212${amount} ${cell.unit}` : `${amount} ${cell.unit}`,
+        over,
+      };
+    });
   });
 }
