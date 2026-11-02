@@ -132,4 +132,4 @@ docs/screenshot.png   the dashboard as a PNG, for this README
 
 ## License
 
-MIT - see [LICENSE](LICENSE). Copyright (c) 2026 StefanOOEOrg.
+MIT - see [LICENSE](LICENSE). Copyright (c) 2026 Stefan SH.
