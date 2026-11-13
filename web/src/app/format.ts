@@ -123,3 +123,34 @@ export function dateLabel(isoDate: string): string {
     timeZone: 'UTC',
   }).format(date);
 }
+
+/**
+ * Whole minutes between an ISO timestamp and `nowMs`, clamped at 0: from `'06:17'` to `'10:55'`
+ * -> `278`.
+ *
+ * `null` in, `null` out (nothing logged). A timestamp in the future (clock skew) and an
+ * unparsable one are `0`, never a negative break. The fraction of a minute is dropped, so the
+ * display only changes once per minute.
+ */
+export function minutesSince(iso: string | null, nowMs: number): number | null {
+  if (iso === null) {
+    return null;
+  }
+  const then = Date.parse(iso);
+  if (Number.isNaN(then)) {
+    return 0;
+  }
+  return Math.max(0, Math.floor((nowMs - then) / 60_000));
+}
+
+/**
+ * A break in whole minutes as text: `7` -> `'0h 07m'`, `278` -> `'4h 38m'`,
+ * `1872` -> `'31h 12m'`.
+ *
+ * Hours never wrap at 24 and are not padded; minutes are always two digits.
+ */
+export function breakText(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return `${hours}h ${String(rest).padStart(2, '0')}m`;
+}

@@ -2,16 +2,19 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Observable, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { App, errorMessage } from './app';
 import { ApiService } from './api.service';
 import { BudgetPanel } from './budget-panel/budget-panel';
 import { DayLog } from './day-log/day-log';
+import { MealTimer } from './meal-timer/meal-timer';
 import { DayResponse, Entry, Goals, Totals } from './models';
 
 const DAY: DayResponse = {
   date: '2026-10-30',
   timezone: 'Europe/Vienna',
+  last_meal_at: '2026-10-30T06:17:00+01:00',
   goals: { kcal: 2000, protein_g: 130, carbs_g: 210, fat_g: 70, water_ml: 3000 },
   totals: { kcal: 554, protein_g: 49.3, carbs_g: 58.2, fat_g: 12.9, water_ml: 0 },
   entries: [
@@ -62,13 +65,25 @@ class DayLogStub {
   @Input() nowLabel = '';
 }
 
+/** Stand-in for the meal break panel: it only shows what the shell passes down. */
+@Component({
+  selector: 'app-meal-timer',
+  template:
+    '<span data-testid="stub-timer">{{ lastMealAt }}</span>' +
+    '<span data-testid="stub-now">{{ nowMs }}</span>',
+})
+class MealTimerStub {
+  @Input() lastMealAt: string | null = null;
+  @Input() nowMs = 0;
+}
+
 function setup(getToday: () => Observable<DayResponse>): ComponentFixture<App> {
   TestBed.configureTestingModule({
     providers: [{ provide: ApiService, useValue: { getToday } }],
   });
   TestBed.overrideComponent(App, {
-    remove: { imports: [BudgetPanel, DayLog] },
-    add: { imports: [BudgetPanelStub, DayLogStub] },
+    remove: { imports: [BudgetPanel, DayLog, MealTimer] },
+    add: { imports: [BudgetPanelStub, DayLogStub, MealTimerStub] },
   });
   return TestBed.createComponent(App);
 }
@@ -138,6 +153,31 @@ describe('App', () => {
     fixture.detectChanges();
 
     expect(calls).toBe(2);
+  });
+
+  it('hands the last meal and the clock to the meal timer', () => {
+    fixture = setup(() => of(DAY));
+    fixture.detectChanges();
+
+    expect(text(fixture, 'stub-timer')).toBe('2026-10-30T06:17:00+01:00');
+    expect(text(fixture, 'stub-now')).toMatch(/^\d+$/);
+  });
+
+  it('ticks the clock every 30 s and clears the interval on destroy', () => {
+    const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+    const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval');
+
+    fixture = setup(() => of(DAY));
+    fixture.detectChanges();
+
+    const tick = setIntervalSpy.mock.calls.findIndex(([, delay]) => delay === 30_000);
+    expect(tick).toBeGreaterThanOrEqual(0);
+    const tickId = setIntervalSpy.mock.results[tick].value as number;
+
+    fixture.destroy();
+    fixture = null;
+
+    expect(clearIntervalSpy).toHaveBeenCalledWith(tickId);
   });
 });
 

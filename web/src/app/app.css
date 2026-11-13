@@ -87,6 +87,14 @@
   min-height: 0;
 }
 
+/* The left column: budget panel and meal break, stacked and scrolling on their own. */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
 .placeholder {
   display: block;
   color: var(--muted);

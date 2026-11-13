@@ -8,6 +8,7 @@ import { DayResponse } from './models';
 const DAY: DayResponse = {
   date: '2026-10-30',
   timezone: 'Europe/Vienna',
+  last_meal_at: '2026-10-30T06:17:00+01:00',
   goals: { kcal: 2000, protein_g: 130, carbs_g: 210, fat_g: 70, water_ml: 3000 },
   totals: { kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, water_ml: 0 },
   entries: [],

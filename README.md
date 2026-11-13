@@ -26,6 +26,8 @@ Both servers share one Postgres database; the dashboard only reads from it.
 - **Macro budget**: protein, carbs and fat with grams, goal, percent and an over state.
 - **Water**: millilitres against the goal.
 - **Left today**: kcal, protein, carbs, fat and water still available (negative = over).
+- **Meal break**: hours and minutes since the last caloric intake, as a bar toward the five hour
+  goal - coffee and water do not count.
 - **Day timeline**: one dot per logged entry on a 00:00-24:00 band, water in blue, plus a "now"
   marker.
 - **Log**: one row per logged minute on a vertical time axis - the foods, kcal as number and as
