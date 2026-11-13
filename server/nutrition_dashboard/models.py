@@ -40,8 +40,14 @@ class GoalsRow:
 
 @dataclass(frozen=True)
 class RawDay:
-    """Everything one day produced, still ungrouped and in database order."""
+    """Everything one day produced, still ungrouped and in database order.
+
+    ``last_meal_at`` is the newest ``eaten_at`` above the calorie threshold, across all earlier
+    days up to the end of this one (``db.load_day`` runs the query); ``None`` when no such meal
+    exists. ``meals`` and ``water`` stay restricted to the requested day.
+    """
 
     meals: tuple[MealRow, ...]
     water: tuple[WaterRow, ...]
     goals: GoalsRow | None
+    last_meal_at: datetime | None

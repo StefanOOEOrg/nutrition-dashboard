@@ -86,3 +86,51 @@ def test_load_day_keeps_a_partial_goals_row(day: Day, schema: str) -> None:
     assert raw.goals == GoalsRow(
         kcal=Decimal("2000"), protein_g=None, carbs_g=Decimal("210"), fat_g=None, water_ml=None
     )
+
+
+# --- last_meal_at -------------------------------------------------------------------------
+
+
+def test_last_meal_at_is_the_latest_meal_above_the_threshold(day: Day, schema: str) -> None:
+    # 05:17Z is 06:17 local, water comes later but never counts.
+    day.meal(datetime(2026, 10, 30, 5, 17, tzinfo=UTC), name="Frühstück", kcal="554")
+    day.water(datetime(2026, 10, 30, 8, 0, tzinfo=UTC), 500)
+
+    raw = load_day(date(2026, 10, 30), url=day.url, tz=TZ, schema=schema)
+
+    assert raw.last_meal_at is not None
+    assert raw.last_meal_at.utcoffset() is not None
+    assert raw.last_meal_at.astimezone(UTC) == datetime(2026, 10, 30, 5, 17, tzinfo=UTC)
+
+
+def test_last_meal_at_reaches_back_to_the_previous_day(day: Day, schema: str) -> None:
+    # 2 kcal espresso today is below the threshold; the real meal was yesterday evening.
+    day.meal(datetime(2026, 10, 30, 7, 0, tzinfo=UTC), meal_type="drink", name="Espresso", kcal="2")
+    day.meal(datetime(2026, 10, 29, 18, 0, tzinfo=UTC), name="Abendessen", kcal="640")
+
+    raw = load_day(date(2026, 10, 30), url=day.url, tz=TZ, schema=schema)
+
+    assert raw.last_meal_at is not None
+    assert raw.last_meal_at.astimezone(UTC) == datetime(2026, 10, 29, 18, 0, tzinfo=UTC)
+
+
+def test_last_meal_at_ignores_exactly_five_kcal(day: Day, schema: str) -> None:
+    day.meal(datetime(2026, 10, 30, 7, 0, tzinfo=UTC), meal_type="drink", name="Kaffee", kcal="5")
+
+    raw = load_day(date(2026, 10, 30), url=day.url, tz=TZ, schema=schema)
+
+    assert raw.last_meal_at is None
+
+
+def test_last_meal_at_ignores_a_meal_after_the_end_of_the_day(day: Day, schema: str) -> None:
+    # 23:30Z is 00:30 local on 31 October - later than the requested day.
+    day.meal(datetime(2026, 10, 30, 23, 30, tzinfo=UTC), name="Next day", kcal="300")
+
+    raw = load_day(date(2026, 10, 30), url=day.url, tz=TZ, schema=schema)
+
+    assert raw.last_meal_at is None
+
+
+def test_last_meal_at_is_none_without_any_row(day: Day, schema: str) -> None:
+    raw = load_day(date(2026, 10, 30), url=day.url, tz=TZ, schema=schema)
+    assert raw.last_meal_at is None
