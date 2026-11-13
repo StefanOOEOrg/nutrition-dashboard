@@ -45,9 +45,10 @@ def raw(
     meals: tuple[MealRow, ...] = (),
     water_rows: tuple[WaterRow, ...] = (),
     goals: GoalsRow | None = None,
+    last_meal_at: datetime | None = None,
 ) -> RawDay:
     """RawDay with the given rows."""
-    return RawDay(meals=meals, water=water_rows, goals=goals)
+    return RawDay(meals=meals, water=water_rows, goals=goals, last_meal_at=last_meal_at)
 
 
 def all_goals() -> GoalsRow:
@@ -353,3 +354,22 @@ def test_a_comma_inside_parentheses_does_not_split_a_food() -> None:
         "High Protein Milchreis 1 Portion (½ Dose, 200 g)",
         "NOM Interval High Carb Proteinshake 1 Portion (30 g, 2 Messlöffel)",
     ]
+
+
+# --- build_day: last_meal_at --------------------------------------------------------------
+
+
+def test_last_meal_at_is_iso_8601_with_the_local_offset() -> None:
+    # 05:17Z is 06:17 in Vienna (CET) on 30 October 2026.
+    result = build_day(
+        date(2026, 10, 30),
+        raw(last_meal_at=datetime(2026, 10, 30, 5, 17, tzinfo=UTC)),
+        TZ,
+    )
+    assert result["last_meal_at"] == "2026-10-30T06:17:00+01:00"
+
+
+def test_last_meal_at_is_none_when_no_meal_counts() -> None:
+    result = build_day(date(2026, 10, 30), raw(), TZ)
+    assert "last_meal_at" in result
+    assert result["last_meal_at"] is None

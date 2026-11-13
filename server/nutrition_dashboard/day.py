@@ -104,6 +104,7 @@ def build_day(day: date, raw: RawDay, tz: str) -> dict[str, Any]:
         {
           "date": "2026-10-30",              # day.isoformat()
           "timezone": "Europe/Vienna",       # tz, unchanged
+          "last_meal_at": "2026-10-30T06:17:00+01:00",  # ISO with the user's offset, or None
           "goals": {"kcal": 2000.0, "protein_g": 130.0, "carbs_g": 210.0,
                     "fat_g": 70.0, "water_ml": 3000},
           "totals": {"kcal": 1624.4, "protein_g": 134.8, "carbs_g": 107.1,
@@ -144,6 +145,10 @@ def build_day(day: date, raw: RawDay, tz: str) -> dict[str, Any]:
     - ``goals`` maps the ``GoalsRow`` fields through ``float`` rounded to one decimal
       (``water_ml`` stays ``int``); a column that is ``None`` stays ``None``, and
       ``raw.goals is None`` means every goal is ``None``.
+    - ``last_meal_at`` is ``raw.last_meal_at`` converted to the zone ``tz`` and emitted as
+      ISO-8601 **with the user's offset** (``"2026-11-13T06:17:00+01:00"``); ``None`` passes
+      through as ``None``. The value must be timezone-aware: ``astimezone`` is allowed to raise on
+      a naive datetime rather than guessing a zone.
     - An empty day (no meals, no water) returns an empty ``entries`` list, totals of ``0`` and
       the goals as they are - not an error.
     """
@@ -162,6 +167,9 @@ def build_day(day: date, raw: RawDay, tz: str) -> dict[str, Any]:
     return {
         "date": day.isoformat(),
         "timezone": tz,
+        "last_meal_at": (
+            None if raw.last_meal_at is None else raw.last_meal_at.astimezone(zone).isoformat()
+        ),
         "goals": _goals(raw.goals),
         "totals": {
             **{key: round(sum(entry[key] for entry in entries), 1) for key in NUTRIENTS},

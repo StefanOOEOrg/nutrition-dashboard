@@ -12,6 +12,8 @@ from psycopg import sql
 from .day import day_bounds
 from .models import GoalsRow, MealRow, RawDay, WaterRow
 
+LAST_MEAL_KCAL = 5  # strictly above this counts as a meal: 5.0 kcal does not, 5.1 does
+
 
 def load_day(day: date, *, url: str, tz: str, schema: str = "nutrition") -> RawDay:
     """Read one calendar day and return its rows as ``RawDay``.
@@ -25,6 +27,10 @@ def load_day(day: date, *, url: str, tz: str, schema: str = "nutrition") -> RawD
       ordered by ``eaten_at``, then ``name``. Water: ``drunk_at, ml`` ordered by ``drunk_at``.
       Goals: the single row, ``id = 1``, columns ``kcal, protein_g, carbs_g, fat_g, water_ml``;
       a missing row is not an error -> ``goals=None``.
+    - Last meal: ``max(eaten_at)`` over ``<schema>.meals`` with ``kcal > LAST_MEAL_KCAL`` and
+      ``eaten_at < end``. There is no lower bound, so the newest meal may be from an earlier day;
+      the end of the day keeps a row dated later out. ``max()`` over no rows is ``NULL`` ->
+      ``last_meal_at=None``, never a zero timestamp.
     - The schema name comes from the ``schema`` argument and must go through
       ``psycopg.sql.Identifier`` inside ``psycopg.sql.SQL(...)``; never build SQL by string
       concatenation or f-strings.
@@ -56,9 +62,16 @@ def load_day(day: date, *, url: str, tz: str, schema: str = "nutrition") -> RawD
                 "select kcal, protein_g, carbs_g, fat_g, water_ml from {schema}.goals where id = 1"
             ).format(schema=sql.Identifier(schema))
         ).fetchone()
+        last_meal_row = conn.execute(
+            sql.SQL(
+                "select max(eaten_at) from {schema}.meals where kcal > %s and eaten_at < %s"
+            ).format(schema=sql.Identifier(schema)),
+            (LAST_MEAL_KCAL, end),
+        ).fetchone()
 
     return RawDay(
         meals=tuple(MealRow(*row) for row in meal_rows),
         water=tuple(WaterRow(*row) for row in water_rows),
         goals=None if goals_row is None else GoalsRow(*goals_row),
+        last_meal_at=None if last_meal_row is None else last_meal_row[0],
     )
