@@ -1,11 +1,20 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 
 import { ApiService } from './api.service';
 import { BudgetPanel } from './budget-panel/budget-panel';
 import { DayLog } from './day-log/day-log';
 import { clockLabel, dateLabel } from './format';
+import { MealTimer } from './meal-timer/meal-timer';
 import { DayResponse } from './models';
+
+/**
+ * How often the page advances `nowMs`, in milliseconds.
+ *
+ * The meal break is shown in whole minutes, so half a minute is the most it can be stale; a
+ * one-second tick would cost battery and test time for no visible change.
+ */
+export const TICK_MS = 30_000;
 
 /**
  * Readable message for a failed load: the server's `detail` when there is one, otherwise the
@@ -32,12 +41,13 @@ export function errorMessage(error: unknown): string {
  */
 @Component({
   selector: 'app-root',
-  imports: [BudgetPanel, DayLog],
+  imports: [BudgetPanel, DayLog, MealTimer],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly destroyRef = inject(DestroyRef);
   /** Last successful response; `null` until the first load. */
   protected readonly day = signal<DayResponse | null>(null);
   /** Readable message of the last failed load. */
@@ -46,6 +56,8 @@ export class App implements OnInit {
   protected readonly loading = signal(false);
   /** Wall-clock time of the last load, `HH:MM`. */
   protected readonly nowLabel = signal(clockLabel(new Date()));
+  /** Current time in epoch milliseconds for the meal break, advanced every `TICK_MS`. */
+  protected readonly nowMs = signal(Date.now());
   /** Number of logged entries today, `0` before the first load. */
   protected readonly entryCount = computed(() => this.day()?.entries.length ?? 0);
   /** Long date of the loaded day, empty before the first load. */
@@ -53,6 +65,11 @@ export class App implements OnInit {
     const day = this.day();
     return day ? dateLabel(day.date) : '';
   });
+
+  constructor() {
+    const tickId = setInterval(() => this.nowMs.set(Date.now()), TICK_MS);
+    this.destroyRef.onDestroy(() => clearInterval(tickId));
+  }
 
   ngOnInit(): void {
     this.load();

@@ -17,11 +17,14 @@
 
 @if (day(); as data) {
   <main class="grid">
-    <app-budget-panel
-      [goals]="data.goals"
-      [totals]="data.totals"
-      [entryCount]="entryCount()"
-    ></app-budget-panel>
+    <div class="side">
+      <app-budget-panel
+        [goals]="data.goals"
+        [totals]="data.totals"
+        [entryCount]="entryCount()"
+      ></app-budget-panel>
+      <app-meal-timer [lastMealAt]="data.last_meal_at" [nowMs]="nowMs()"></app-meal-timer>
+    </div>
     <app-day-log
       [entries]="data.entries"
       [goals]="data.goals"

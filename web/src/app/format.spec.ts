@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest';
 import {
   RING_CIRCUMFERENCE,
   barWidth,
+  breakText,
   clockLabel,
   dateLabel,
   dayFraction,
   isOver,
+  minutesSince,
   number1,
   ringOffset,
   share,
@@ -120,5 +122,42 @@ describe('dateLabel', () => {
 
   it('returns unparsable input unchanged', () => {
     expect(dateLabel('nope')).toBe('nope');
+  });
+});
+
+describe('minutesSince', () => {
+  it('is the whole minutes between the timestamp and now', () => {
+    const meal = '2026-10-30T06:17:00+01:00';
+    expect(minutesSince(meal, Date.parse('2026-10-30T10:55:00+01:00'))).toBe(278);
+    expect(minutesSince(meal, Date.parse('2026-10-30T11:17:00+01:00'))).toBe(300);
+  });
+
+  it('drops the part of a minute', () => {
+    const meal = '2026-10-30T10:00:00+01:00';
+    expect(minutesSince(meal, Date.parse('2026-10-30T10:00:59+01:00'))).toBe(0);
+    expect(minutesSince(meal, Date.parse('2026-10-30T10:01:01+01:00'))).toBe(1);
+  });
+
+  it('is null without a timestamp and zero for one in the future', () => {
+    const now = Date.parse('2026-10-30T10:55:00+01:00');
+    expect(minutesSince(null, now)).toBeNull();
+    expect(minutesSince('2026-10-30T11:17:00+01:00', now)).toBe(0);
+  });
+
+  it('is zero for an unparsable timestamp', () => {
+    expect(minutesSince('nope', Date.parse('2026-10-30T10:55:00+01:00'))).toBe(0);
+  });
+});
+
+describe('breakText', () => {
+  it('writes hours and two-digit minutes without a space around h', () => {
+    expect(breakText(0)).toBe('0h 00m');
+    expect(breakText(7)).toBe('0h 07m');
+    expect(breakText(278)).toBe('4h 38m');
+    expect(breakText(600)).toBe('10h 00m');
+  });
+
+  it('does not wrap the hours at 24', () => {
+    expect(breakText(1872)).toBe('31h 12m');
   });
 });

@@ -1,0 +1,20 @@
+<section class="card" data-testid="meal-timer">
+  <h2>Meal break</h2>
+  @if (hasMeal()) {
+    <div class="elapsed" data-testid="meal-timer-elapsed">{{ elapsedText() }}</div>
+    <div
+      class="bar"
+      data-testid="meal-timer-bar"
+      role="progressbar"
+      [attr.aria-valuemin]="0"
+      [attr.aria-valuemax]="goalMinutes"
+      [attr.aria-valuenow]="ariaValueNow()"
+      [attr.aria-valuetext]="elapsedText()"
+    >
+      <i [style.width.%]="percent()"></i>
+    </div>
+    <div class="goal" data-testid="meal-timer-goal">{{ goalText() }}</div>
+  } @else {
+    <div class="empty" data-testid="meal-timer-empty">No meal logged yet.</div>
+  }
+</section>

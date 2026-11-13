@@ -44,6 +44,12 @@ export interface DayResponse {
   /** Local date, `YYYY-MM-DD`. */
   date: string;
   timezone: string;
+  /**
+   * Newest caloric intake of the day, ISO-8601 with the offset of `timezone`
+   * (`'2026-10-30T06:17:00+01:00'`), or `null` when nothing above the calorie threshold was
+   * logged. Coffee and water do not count; the server already filtered them out.
+   */
+  last_meal_at: string | null;
   goals: Goals;
   totals: Totals;
   entries: Entry[];
